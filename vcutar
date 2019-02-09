@@ -1,0 +1,208 @@
+#! /bin/bash
+
+######################################
+#
+# James Stallings  V00859712
+# CMSC-257-001 Spring 2019
+#
+# vcutar.sh is a script to automate
+# creation, viewing, and extraction
+# of unix tarball's.
+#
+#######################################
+
+
+# *******************
+# archive_it 
+# 
+# a function to create a tar archive
+# 
+# *******************
+archive_it (){
+filenames='';
+doneflag=0;
+
+# ----------------------------------------------
+# prompt user for input
+# and accept string in variable called options
+# ----------------------------------------------
+echo "Select your options:";
+echo -e "\tv - show tyhe progress of archiving";
+echo -e "\tj - use bzip2";
+echo -e "\tg - use gzip";
+read options
+
+# ----------------------------------------------
+# if the options selected indicate two different forms
+# of compression, ask user to try again. (not possible)
+# ----------------------------------------------
+if echo "$options" | grep -Eq '.*\jg|.*\gj'; 
+	then archive_it;
+fi
+
+options=$(echo "$options" | sed -r 's/g/z/g');
+
+# ----------------------------------------------
+# This is the ARCHIVE function, so we need to PRE-pend
+# options with the -c (archive) flag.
+# ----------------------------------------------
+myvar="-c"
+mytailvar="f"
+options="$myvar""$options""$mytailvar "
+
+# ----------------------------------------------
+# prompt user
+# and accept string in variable called directory
+# ----------------------------------------------
+echo  -e "Input the direstory containing the source files. \"*\" for the current directory.";
+read directory;
+
+# ----------------------------------------------
+# if the user enter * as the source directory, convert
+# to ./ so the path will work.
+# ----------------------------------------------
+if echo "$directory" | grep -Eq '*'; 
+then
+directory='./';
+fi
+
+# ----------------------------------------------
+# prompt user for filenames
+# ----------------------------------------------
+echo  -e "Input the files/directories to archive. \":q\" to quit, \":a\" to proceed to archiving.";
+
+# ----------------------------------------------
+# loop to append filenames to filenames variable.
+# ----------------------------------------------
+while [ "$doneflag" != 1 ] 
+do
+	read temp;
+	case $temp in 
+	":q")
+	    exit;;
+	":a")
+	    doneflag=1;;
+	*)
+	filenames="$filenames $temp";;
+	esac
+done
+
+# ----------------------------------------------
+# prompt user for output filename
+# and store value in archiveName
+# ----------------------------------------------
+echo -e "Input the name of the archive."
+read archiveName;
+
+
+# ----------------------------------------------
+# append archiveName with .tz2 if
+# archive option included "j"
+# ----------------------------------------------
+if echo "$options" | grep -Eq '.*\j.*'; 
+then extension=".tz2";
+archiveName="$archiveName""$extension";
+fi
+
+# ----------------------------------------------
+# append archiveName with .tgz if
+# archive option included "g"
+# ----------------------------------------------
+if echo "$options" | grep -Eq '.*\z.*'; 
+then extension=".tgz";
+archiveName="$archiveName""$extension";
+fi
+
+# ----------------------------------------------
+# Build up the tar command parameters
+# ----------------------------------------------
+command="$options""$directory""$archiveName""$filenames";
+
+eval "$command"
+
+# $$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+#
+#  EXECUTE THE TAR COMMAND
+#
+# $$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+Archive=$(tar "$command")
+}
+
+# *******************
+# extract_it 
+# 
+# a function to extract a tar archive
+# 
+# *******************
+
+extract_it (){
+options='-xf'
+# ----------------------------------------------
+# prompt user for file to extract
+# and store value in archiveName
+# ----------------------------------------------
+echo -e "Input the name of the archive to be extracted."
+read archiveName;
+
+# ----------------------------------------------
+# prompt user
+# and accept string in variable called directory
+# ----------------------------------------------
+echo  -e "Input the direstory to extract to. \"*\" for the current directory.";
+read directory;
+
+# ----------------------------------------------
+# if the user enter * as the source directory, convert
+# to ./ so the path will work.
+# ----------------------------------------------
+if echo "$directory" | grep -Eq '*'; 
+then
+directory='';
+fi
+
+# ----------------------------------------------
+# Build up the tar command parameters
+# ----------------------------------------------
+command="tar $options ""$directory""$archiveName";
+
+eval "$command"
+}
+
+
+# *******************
+# eview_it 
+# 
+# a function to view the contents of a tar archive
+# 
+# *******************
+view_it (){
+
+# ----------------------------------------------
+# prompt user
+# and accept string in variable called pathtofile
+# ----------------------------------------------
+echo  -e "Input the name of the archive to be viewed.";
+read pathtofile;
+
+options='-ztvf'
+# ----------------------------------------------
+# Build up the tar command parameters
+# ----------------------------------------------
+command="tar $options ""$pathtofile";
+
+eval "$command"
+}
+
+
+
+case $1 in archive)
+archive_it;;
+extract)
+extract_it;;
+view)
+view_it;;
+:q)
+exit;;
+esac
+
